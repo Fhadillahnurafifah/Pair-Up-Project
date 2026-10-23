@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pair Up — Belajar Bareng, Tenggat Aman</title>
+  <meta name="description" content="Pair Up: pengingat tugas & ujian plus berkas catatan bersama untuk mahasiswa." />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 900:'#312e81' }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Font & Ikon -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    .fade-in { animation: fadeIn .25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .toast-in { animation: toastIn .3s ease-out; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+    .task-done .task-title { text-decoration: line-through; color: #94a3b8; }
+    .nav-active { background: #eef2ff; color: #4338ca; }
+  </style>
+</head>
+
+<body class="bg-slate-50 font-sans text-slate-800 antialiased">
+
+  <!-- ============ SIDEBAR (desktop) ============ -->
+  <aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col bg-white border-r border-slate-200 p-5 z-30">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+        <i class="fa-solid fa-user-group"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-extrabold leading-none">Pair Up</h1>
+        <p class="text-xs text-slate-400 mt-1">Belajar bareng, aman tenggat</p>
+      </div>
+    </div>
+
+    <nav class="space-y-1 text-sm font-medium" id="sidebarNav">
+      <button data-view="dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 transition"><i class="fa-solid fa-chart-pie w-5"></i> Dashboard</button>
+      <button data-view="tasks" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 transition"><i class="fa-solid fa-list-check w-5"></i> Tugas &amp; Ujian</button>
+      <button data-view="files" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 transition"><i class="fa-solid fa-folder-open w-5"></i> Berkas Bersama</button>
+      <button data-view="partners" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 transition"><i class="fa-solid fa-user-group w-5"></i> Teman Belajar</button>
+    </nav>
+
+    <div class="mt-auto rounded-2xl bg-gradient-to-br from-brand-600 to-purple-600 text-white p-4">
+      <p class="text-sm font-semibold">Streak belajar 🔥</p>
+      <p class="text-3xl font-extrabold mt-1">7 hari</p>
+      <p class="text-xs text-white/80 mt-1">Selesaikan 1 tugas hari ini untuk menjaganya.</p>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="lg:pl-64 min-h-screen pb-24 lg:pb-0">
+
+    <!-- Topbar -->
+    <header class="sticky top-0 z-20 bg-slate-50/80 backdrop-blur border-b border-slate-200">
+      <div class="flex items-center gap-3 px-4 sm:px-8 h-16">
+        <div class="lg:hidden flex items-center gap-2 mr-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-purple-500 flex items-center justify-center text-white text-sm"><i class="fa-solid fa-user-group"></i></div>
+          <span class="font-extrabold">Pair Up</span>
+        </div>
+
+        <div class="relative flex-1 max-w-md hidden sm:block">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input id="searchInput" type="text" placeholder="Cari tugas atau mata kuliah…" class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
+        </div>
+
+        <div class="ml-auto flex items-center gap-2 sm:gap-3">
+          <!-- Notifikasi -->
+          <div class="relative">
+            <button id="bellBtn" class="relative w-10 h-10 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 transition" aria-label="Notifikasi">
+              <i class="fa-regular fa-bell"></i>
+              <span id="bellDot" class="absolute top-2 right-2.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white"></span>
+            </button>
+            <div id="bellPanel" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-white rounded-xl border border-slate-200 shadow-xl p-3 fade-in">
+              <div class="flex items-center justify-between px-1 pb-2">
+                <p class="text-sm font-semibold">Pengingat</p>
+                <button id="markRead" class="text-xs text-brand-600 hover:underline">Tandai dibaca</button>
+              </div>
+              <div id="bellList" class="space-y-1 max-h-72 overflow-y-auto"></div>
+            </div>
+          </div>
+
+          <button id="openTaskModalTop" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow transition">
+            <i class="fa-solid fa-plus"></i> Tugas Baru
+          </button>
+
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-rose-500 text-white font-bold flex items-center justify-center" title="Profil">AM</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="px-4 sm:px-8 py-6 max-w-6xl mx-auto">
+
+      <!-- ===== VIEW: DASHBOARD ===== -->
+      <section id="view-dashboard" class="view fade-in">
+        <div class="mb-6">
+          <h2 class="text-2xl sm:text-3xl font-extrabold" id="greeting">Halo, Andi 👋</h2>
+          <p class="text-slate-500 mt-1" id="greetingSub">Ini ringkasan kuliahmu hari ini.</p>
+        </div>
+
+        <!-- Statistik -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center mb-3"><i class="fa-solid fa-fire"></i></div>
+            <p class="text-2xl font-extrabold" id="statUrgent">0</p>
+            <p class="text-xs text-slate-500">Deadline ≤ 3 hari</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center mb-3"><i class="fa-solid fa-hourglass-half"></i></div>
+            <p class="text-2xl font-extrabold" id="statActive">0</p>
+            <p class="text-xs text-slate-500">Tugas aktif</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3"><i class="fa-solid fa-circle-check"></i></div>
+            <p class="text-2xl font-extrabold" id="statDone">0</p>
+            <p class="text-xs text-slate-500">Selesai</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4">
+            <div class="w-9 h-9 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center mb-3"><i class="fa-solid fa-file-lines"></i></div>
+            <p class="text-2xl font-extrabold" id="statFiles">0</p>
+            <p class="text-xs text-slate-500">Berkas bersama</p>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4 sm:gap-6">
+          <!-- Deadline terdekat -->
+          <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold">Deadline Terdekat</h3>
+              <button data-view="tasks" class="nav-link text-sm text-brand-600 hover:underline">Lihat semua</button>
+            </div>
+            <div id="dashTasks" class="space-y-2"></div>
+          </div>
+
+          <!-- Ujian -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5">
+            <h3 class="font-bold mb-4">Ujian Mendatang</h3>
+            <div id="examList" class="space-y-3"></div>
+
+            <div class="mt-5 pt-4 border-t border-slate-100">
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Progres minggu ini</p>
+              <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div id="progressBar" class="h-full bg-gradient-to-r from-brand-500 to-purple-500 rounded-full transition-all duration-500" style="width:0%"></div>
+              </div>
+              <p class="text-xs text-slate-500 mt-2" id="progressText"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== VIEW: TUGAS ===== -->
+      <section id="view-tasks" class="view hidden fade-in">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-2xl font-extrabold">Tugas &amp; Ujian</h2>
+            <p class="text-slate-500 text-sm">Centang untuk menandai selesai.</p>
+          </div>
+          <button class="openTaskModal inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow transition">
+            <i class="fa-solid fa-plus"></i> Tambah Tugas
+          </button>
+        </div>
+
+        <div class="inline-flex p-1 bg-slate-200/70 rounded-lg mb-4 text-sm font-medium" id="taskFilters">
+          <button data-filter="all" class="filter-btn px-4 py-1.5 rounded-md">Semua</button>
+          <button data-filter="active" class="filter-btn px-4 py-1.5 rounded-md">Aktif</button>
+          <button data-filter="done" class="filter-btn px-4 py-1.5 rounded-md">Selesai</button>
+        </div>
+
+        <div id="taskList" class="space-y-2"></div>
+        <div id="taskEmpty" class="hidden text-center py-16 text-slate-400">
+          <i class="fa-regular fa-face-smile-beam text-4xl mb-3"></i>
+          <p>Tidak ada tugas di sini.</p>
+        </div>
+      </section>
+
+      <!-- ===== VIEW: BERKAS ===== -->
+      <section id="view-files" class="view hidden fade-in">
+        <div class="mb-5">
+          <h2 class="text-2xl font-extrabold">Berkas Bersama</h2>
+          <p class="text-slate-500 text-sm">Unggah catatan dan bagikan ke teman belajarmu.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-5 gap-4 sm:gap-6">
+          <!-- Form input file -->
+          <form id="fileForm" class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 h-fit space-y-4">
+            <h3 class="font-bold">Unggah Berkas</h3>
+
+            <label id="dropZone" for="fileInput" class="block cursor-pointer border-2 border-dashed border-slate-300 hover:border-brand-500 hover:bg-brand-50/50 rounded-xl p-6 text-center transition">
+              <i class="fa-solid fa-cloud-arrow-up text-3xl text-brand-500 mb-2"></i>
+              <p class="text-sm font-medium" id="dropText">Klik atau seret file ke sini</p>
+              <p class="text-xs text-slate-400 mt-1">PDF, DOCX, PPTX, gambar (simulasi — tidak diunggah ke server)</p>
+              <input id="fileInput" type="file" class="hidden" />
+            </label>
+
+            <div>
+              <label class="block text-sm font-medium mb-1" for="fileTitle">Judul catatan</label>
+              <input id="fileTitle" type="text" required placeholder="mis. Rangkuman Bab 3" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1" for="fileCourse">Mata kuliah</label>
+              <select id="fileCourse" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+                <option>Basis Data</option>
+                <option>Pemrograman Web</option>
+                <option>Statistika</option>
+                <option>Jaringan Komputer</option>
+              </select>
+            </div>
+
+            <div>
+              <p class="block text-sm font-medium mb-2">Bagikan ke</p>
+              <div class="flex flex-wrap gap-2" id="shareChips"></div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition">
+              <i class="fa-solid fa-share-nodes mr-1"></i> Unggah &amp; Bagikan
+            </button>
+          </form>
+
+          <!-- Daftar file -->
+          <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-5">
+            <h3 class="font-bold mb-4">Semua Berkas</h3>
+            <div id="fileList" class="space-y-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== VIEW: TEMAN ===== -->
+      <section id="view-partners" class="view hidden fade-in">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-2xl font-extrabold">Teman Belajar</h2>
+            <p class="text-slate-500 text-sm">Pasangan belajarmu di Pair Up.</p>
+          </div>
+          <button id="inviteBtn" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-sm font-semibold transition">
+            <i class="fa-solid fa-link"></i> Salin Link Undangan
+          </button>
+        </div>
+        <div id="partnerList" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============ BOTTOM NAV (mobile) ============ -->
+  <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 grid grid-cols-4 text-xs" id="mobileNav">
+    <button data-view="dashboard" class="nav-btn flex flex-col items-center gap-1 py-3 text-slate-500"><i class="fa-solid fa-chart-pie text-base"></i>Beranda</button>
+    <button data-view="tasks" class="nav-btn flex flex-col items-center gap-1 py-3 text-slate-500"><i class="fa-solid fa-list-check text-base"></i>Tugas</button>
+    <button data-view="files" class="nav-btn flex flex-col items-center gap-1 py-3 text-slate-500"><i class="fa-solid fa-folder-open text-base"></i>Berkas</button>
+    <button data-view="partners" class="nav-btn flex flex-col items-center gap-1 py-3 text-slate-500"><i class="fa-solid fa-user-group text-base"></i>Teman</button>
+  </nav>
+
+  <!-- Tombol tambah mengambang (mobile) -->
+  <button class="openTaskModal sm:hidden fixed right-4 bottom-20 z-30 w-14 h-14 rounded-full bg-brand-600 text-white shadow-xl shadow-brand-600/40 text-xl" aria-label="Tambah tugas">
+    <i class="fa-solid fa-plus"></i>
+  </button>
+
+  <!-- ============ MODAL TAMBAH TUGAS ============ -->
+  <div id="taskModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" data-close-modal></div>
+    <form id="taskForm" class="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl fade-in space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold">Tambah Tugas / Ujian</h3>
+        <button type="button" data-close-modal class="w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-400" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1" for="tTitle">Judul</label>
+        <input id="tTitle" type="text" required placeholder="mis. Laporan Praktikum 4" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="tCourse">Mata kuliah</label>
+          <select id="tCourse" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+            <option>Basis Data</option>
+            <option>Pemrograman Web</option>
+            <option>Statistika</option>
+            <option>Jaringan Komputer</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="tType">Jenis</label>
+          <select id="tType" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+            <option value="tugas">Tugas</option>
+            <option value="ujian">Ujian</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1" for="tDue">Tenggat</label>
+        <input id="tDue" type="date" required class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/40" />
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="button" data-close-modal class="flex-1 py-2.5 rounded-lg border border-slate-200 text-sm font-semibold hover:bg-slate-50">Batal</button>
+        <button type="submit" class="flex-1 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============ TOAST ============ -->
+  <div id="toastBox" class="fixed top-4 right-4 z-[60] space-y-2 w-72 max-w-[calc(100vw-2rem)]"></div>
+
+  <!-- ============ JAVASCRIPT ============ -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ---------- Util ---------- */
+      const $ = (s, r = document) => r.querySelector(s);
+      const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+      const DAY = 86400000;
+
+      function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+      function daysFromNow(n) { return new Date(startOfToday().getTime() + n * DAY); }
+      function toISO(d) {
+        const p = x => String(x).padStart(2, '0');
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+      }
+      function parseISO(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+      function diffDays(iso) { return Math.round((parseISO(iso) - startOfToday()) / DAY); }
+      function formatDate(iso) {
+        return parseISO(iso).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+      }
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+      function dueBadge(iso, done) {
+        if (done) return { text: 'Selesai', cls: 'bg-emerald-100 text-emerald-700' };
+        const d = diffDays(iso);
+        if (d < 0) return { text: 'Terlambat ' + Math.abs(d) + ' hari', cls: 'bg-rose-100 text-rose-700' };
+        if (d === 0) return { text: 'Hari ini', cls: 'bg-rose-100 text-rose-700' };
+        if (d === 1) return { text: 'Besok', cls: 'bg-rose-100 text-rose-700' };
+        if (d <= 3) return { text: d + ' hari lagi', cls: 'bg-amber-100 text-amber-700' };
+        return { text: d + ' hari lagi', cls: 'bg-slate-100 text-slate-600' };
+      }
+
+      /* ---------- Data contoh (tanggal dibuat relatif terhadap hari ini) ---------- */
+      const partners = [
+        { id: 1, name: 'Sinta Rahma', course: 'Basis Data', color: 'from-pink-400 to-rose-500', online: true },
+        { id: 2, name: 'Budi Santoso', course: 'Pemrograman Web', color: 'from-sky-400 to-blue-500', online: false },
+        { id: 3, name: 'Dewi Lestari', course: 'Statistika', color: 'from-emerald-400 to-teal-500', online: true }
+      ];
+
+      let tasks = [
+        { id: 1, title: 'Laporan Praktikum ERD', course: 'Basis Data', type: 'tugas', due: toISO(daysFromNow(1)), done: false },
+        { id: 2, title: 'UTS Pemrograman Web', course: 'Pemrograman Web', type: 'ujian', due: toISO(daysFromNow(5)), done: false },
+        { id: 3, title: 'Tugas Regresi Linear', course: 'Statistika', type: 'tugas', due: toISO(daysFromNow(3)), done: false },
+        { id: 4, title: 'Presentasi Topologi Jaringan', course: 'Jaringan Komputer', type: 'tugas', due: toISO(daysFromNow(8)), done: false },
+        { id: 5, title: 'Kuis Normalisasi', course: 'Basis Data', type: 'ujian', due: toISO(daysFromNow(12)), done: false },
+        { id: 6, title: 'Resume Bab 2 Statistika', course: 'Statistika', type: 'tugas', due: toISO(daysFromNow(-1)), done: true }
+      ];
+
+      let files = [
+        { id: 1, title: 'Rangkuman Normalisasi 1NF–3NF', course: 'Basis Data', name: 'normalisasi.pdf', by: 'Sinta Rahma', when: '2 jam lalu' },
+        { id: 2, title: 'Cheatsheet Flexbox & Grid', course: 'Pemrograman Web', name: 'flex-grid.pdf', by: 'Budi Santoso', when: 'Kemarin' },
+        { id: 3, title: 'Soal Latihan Distribusi Normal', course: 'Statistika', name: 'latihan-distribusi.docx', by: 'Kamu', when: '3 hari lalu' }
+      ];
+
+      let nextTaskId = 100, nextFileId = 100;
+      let currentFilter = 'all';
+      let searchTerm = '';
+      let selectedFileName = '';
+      const sharedWith = new Set([1]);
+
+      /* ---------- Penyimpanan ringan (aman bila diblokir browser) ---------- */
+      function save() {
+        try { localStorage.setItem('pairup_tasks', JSON.stringify(tasks)); localStorage.setItem('pairup_files', JSON.stringify(files)); } catch (e) {}
+      }
+      function load() {
+        try {
+          const t = JSON.parse(localStorage.getItem('pairup_tasks') || 'null');
+          const f = JSON.parse(localStorage.getItem('pairup_files') || 'null');
+          if (Array.isArray(t)) tasks = t;
+          if (Array.isArray(f)) files = f;
+        } catch (e) {}
+      }
+
+      /* ---------- Toast ---------- */
+      function toast(message, type) {
+        const styles = {
+          success: ['bg-emerald-600', 'fa-circle-check'],
+          info: ['bg-slate-800', 'fa-circle-info'],
+          warn: ['bg-amber-500', 'fa-triangle-exclamation']
+        };
+        const [bg, icon] = styles[type || 'info'];
+        const el = document.createElement('div');
+        el.className = 'toast-in flex items-start gap-3 text-white text-sm rounded-xl px-4 py-3 shadow-lg ' + bg;
+        el.innerHTML = '<i class="fa-solid ' + icon + ' mt-0.5"></i><span>' + escapeHtml(message) + '</span>';
+        $('#toastBox').appendChild(el);
+        setTimeout(() => { el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2800);
+      }
+
+      /* ---------- Navigasi antar tampilan ---------- */
+      function showView(name) {
+        $$('.view').forEach(v => v.classList.add('hidden'));
+        const target = $('#view-' + name);
+        target.classList.remove('hidden');
+        target.classList.remove('fade-in'); void target.offsetWidth; target.classList.add('fade-in');
+        $$('.nav-btn').forEach(b => {
+          const active = b.dataset.view === name;
+          b.classList.toggle('nav-active', active);
+          if (b.closest('#mobileNav')) { b.classList.toggle('text-brand-600', active); b.classList.toggle('text-slate-500', !active); }
+          else { b.classList.toggle('text-slate-600', !active); }
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      $$('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+
+      /* ---------- Render: tugas ---------- */
+      function taskRow(t, compact) {
+        const b = dueBadge(t.due, t.done);
+        const icon = t.type === 'ujian' ? 'fa-file-pen text-purple-600 bg-purple-100' : 'fa-book text-brand-600 bg-brand-100';
+        return '' +
+          '<div class="task-item ' + (t.done ? 'task-done ' : '') + 'flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-brand-200 hover:bg-brand-50/30 transition" data-id="' + t.id + '">' +
+            '<input type="checkbox" class="task-check w-5 h-5 rounded accent-indigo-600 cursor-pointer" ' + (t.done ? 'checked' : '') + ' aria-label="Selesai" />' +
+            '<div class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ' + icon + '"><i class="fa-solid ' + icon.split(' ')[0] + '"></i></div>' +
+            '<div class="min-w-0 flex-1">' +
+              '<p class="task-title text-sm font-semibold truncate">' + escapeHtml(t.title) + '</p>' +
+              '<p class="text-xs text-slate-500 truncate">' + escapeHtml(t.course) + ' • ' + formatDate(t.due) + '</p>' +
+            '</div>' +
+            '<span class="text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ' + b.cls + '">' + b.text + '</span>' +
+            (compact ? '' : '<button class="task-del w-8 h-8 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50" aria-label="Hapus"><i class="fa-regular fa-trash-can"></i></button>') +
+          '</div>';
+      }
+
+      function sortedActive() {
+        return tasks.filter(t => !t.done).sort((a, b) => a.due.localeCompare(b.due));
+      }
+
+      function renderTasks() {
+        let list = tasks.slice().sort((a, b) => a.due.localeCompare(b.due));
+        if (currentFilter === 'active') list = list.filter(t => !t.done);
+        if (currentFilter === 'done') list = list.filter(t => t.done);
+        if (searchTerm) {
+          const q = searchTerm.toLowerCase();
+          list = list.filter(t => t.title.toLowerCase().includes(q) || t.course.toLowerCase().includes(q));
+        }
+        $('#taskList').innerHTML = list.map(t => taskRow(t, false)).join('');
+        $('#taskEmpty').classList.toggle('hidden', list.length > 0);
+
+        $$('.filter-btn').forEach(b => {
+          const on = b.dataset.filter === currentFilter;
+          b.classList.toggle('bg-white', on); b.classList.toggle('shadow', on);
+          b.classList.toggle('text-brand-700', on); b.classList.toggle('text-slate-600', !on);
+        });
+      }
+
+      /* ---------- Render: dashboard ---------- */
+      function renderDashboard() {
+        const active = sortedActive();
+        const urgent = active.filter(t => diffDays(t.due) <= 3).length;
+        const done = tasks.filter(t => t.done).length;
+
+        $('#statUrgent').textContent = urgent;
+        $('#statActive').textContent = active.length;
+        $('#statDone').textContent = done;
+        $('#statFiles').textContent = files.length;
+
+        $('#greetingSub').textContent = urgent > 0
+          ? 'Kamu punya ' + urgent + ' deadline dalam 3 hari ke depan. Semangat!'
+          : 'Tidak ada deadline mendesak. Waktunya belajar santai.';
+
+        $('#dashTasks').innerHTML = active.slice(0, 4).map(t => taskRow(t, true)).join('') ||
+          '<p class="text-sm text-slate-400 py-6 text-center">Semua tugas beres 🎉</p>';
+
+        const exams = active.filter(t => t.type === 'ujian').slice(0, 3);
+        $('#examList').innerHTML = exams.map(e => {
+          const d = Math.max(diffDays(e.due), 0);
+          return '<div class="flex items-center gap-3">' +
+            '<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-brand-600 text-white flex flex-col items-center justify-center leading-none">' +
+              '<span class="text-lg font-extrabold">' + d + '</span><span class="text-[10px] opacity-80">hari</span></div>' +
+            '<div class="min-w-0"><p class="text-sm font-semibold truncate">' + escapeHtml(e.title) + '</p>' +
+            '<p class="text-xs text-slate-500">' + formatDate(e.due) + '</p></div></div>';
+        }).join('') || '<p class="text-sm text-slate-400">Belum ada ujian terjadwal.</p>';
+
+        const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+        $('#progressBar').style.width = pct + '%';
+        $('#progressText').textContent = done + ' dari ' + tasks.length + ' tugas selesai (' + pct + '%)';
+      }
+
+      /* ---------- Render: berkas ---------- */
+      function fileIcon(name) {
+        const ext = (name.split('.').pop() || '').toLowerCase();
+        if (ext === 'pdf') return 'fa-file-pdf text-rose-500 bg-rose-100';
+        if (['doc', 'docx'].includes(ext)) return 'fa-file-word text-blue-600 bg-blue-100';
+        if (['ppt', 'pptx'].includes(ext)) return 'fa-file-powerpoint text-orange-500 bg-orange-100';
+        if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'fa-file-image text-emerald-600 bg-emerald-100';
+        return 'fa-file text-slate-500 bg-slate-100';
+      }
+      function renderFiles() {
+        $('#fileList').innerHTML = files.slice().reverse().map(f => {
+          const ic = fileIcon(f.name);
+          return '<div class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-brand-200 transition" data-id="' + f.id + '">' +
+            '<div class="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center ' + ic + '"><i class="fa-solid ' + ic.split(' ')[0] + '"></i></div>' +
+            '<div class="min-w-0 flex-1"><p class="text-sm font-semibold truncate">' + escapeHtml(f.title) + '</p>' +
+            '<p class="text-xs text-slate-500 truncate">' + escapeHtml(f.course) + ' • ' + escapeHtml(f.by) + ' • ' + escapeHtml(f.when) + '</p></div>' +
+            '<button class="file-dl w-9 h-9 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50" aria-label="Unduh"><i class="fa-solid fa-download"></i></button>' +
+          '</div>';
+        }).join('');
+      }
+
+      /* ---------- Render: teman ---------- */
+      function renderPartners() {
+        $('#partnerList').innerHTML = partners.map(p => {
+          const initials = p.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+          return '<div class="bg-white rounded-2xl border border-slate-200 p-5 text-center" data-id="' + p.id + '">' +
+            '<div class="relative w-16 h-16 mx-auto mb-3"><div class="w-16 h-16 rounded-full bg-gradient-to-br ' + p.color + ' text-white text-xl font-bold flex items-center justify-center">' + initials + '</div>' +
+            '<span class="absolute bottom-0 right-0 w-4 h-4 rounded-full ring-2 ring-white ' + (p.online ? 'bg-emerald-500' : 'bg-slate-300') + '"></span></div>' +
+            '<p class="font-bold">' + escapeHtml(p.name) + '</p>' +
+            '<p class="text-xs text-slate-500 mb-4">' + escapeHtml(p.course) + ' • ' + (p.online ? 'Online' : 'Offline') + '</p>' +
+            '<button class="nudge w-full py-2 rounded-lg bg-brand-50 text-brand-700 text-sm font-semibold hover:bg-brand-100 transition"><i class="fa-regular fa-hand-point-right mr-1"></i> Colek Ingatkan</button>' +
+          '</div>';
+        }).join('');
+
+        $('#shareChips').innerHTML = partners.map(p =>
+          '<button type="button" class="chip px-3 py-1.5 rounded-full text-xs font-semibold border transition ' +
+          (sharedWith.has(p.id) ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200') +
+          '" data-id="' + p.id + '">' + escapeHtml(p.name.split(' ')[0]) + '</button>'
+        ).join('');
+      }
+
+      /* ---------- Render: notifikasi ---------- */
+      function renderBell() {
+        const soon = sortedActive().filter(t => diffDays(t.due) <= 3);
+        $('#bellList').innerHTML = soon.map(t => {
+          const b = dueBadge(t.due, false);
+          return '<div class="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50">' +
+            '<i class="fa-solid fa-clock text-amber-500 mt-1"></i>' +
+            '<div class="min-w-0"><p class="text-sm font-medium truncate">' + escapeHtml(t.title) + '</p>' +
+            '<p class="text-xs text-slate-500">' + b.text + ' • ' + escapeHtml(t.course) + '</p></div></div>';
+        }).join('') || '<p class="text-sm text-slate-400 p-3 text-center">Tidak ada pengingat baru.</p>';
+        $('#bellDot').classList.toggle('hidden', soon.length === 0);
+      }
+
+      function renderAll() { renderDashboard(); renderTasks(); renderFiles(); renderPartners(); renderBell(); }
+
+      /* ---------- Event: daftar tugas ---------- */
+      $('#taskList').addEventListener('click', onTaskClick);
+      $('#dashTasks').addEventListener('click', onTaskClick);
+      function onTaskClick(e) {
+        const row = e.target.closest('.task-item');
+        if (!row) return;
+        const id = Number(row.dataset.id);
+        const t = tasks.find(x => x.id === id);
+        if (!t) return;
+
+        if (e.target.closest('.task-del')) {
+          tasks = tasks.filter(x => x.id !== id);
+          toast('Tugas dihapus.', 'info');
+        } else if (e.target.classList.contains('task-check')) {
+          t.done = e.target.checked;
+          toast(t.done ? 'Mantap! "' + t.title + '" selesai 🎉' : 'Tugas dibuka kembali.', t.done ? 'success' : 'info');
+        } else return;
+        save(); renderAll();
+      }
+
+      /* ---------- Event: filter & pencarian ---------- */
+      $('#taskFilters').addEventListener('click', e => {
+        const b = e.target.closest('.filter-btn'); if (!b) return;
+        currentFilter = b.dataset.filter; renderTasks();
+      });
+      $('#searchInput').addEventListener('input', e => {
+        searchTerm = e.target.value.trim();
+        if (searchTerm) showView('tasks');
+        renderTasks();
+      });
+
+      /* ---------- Modal tugas ---------- */
+      const modal = $('#taskModal');
+      function openModal() {
+        $('#taskForm').reset();
+        $('#tDue').min = toISO(startOfToday());
+        $('#tDue').value = toISO(daysFromNow(2));
+        modal.classList.remove('hidden');
+        setTimeout(() => $('#tTitle').focus(), 50);
+      }
+      function closeModal() { modal.classList.add('hidden'); }
+      $$('.openTaskModal').forEach(b => b.addEventListener('click', openModal));
+      $('#openTaskModalTop').addEventListener('click', openModal);
+      $$('[data-close-modal]').forEach(b => b.addEventListener('click', closeModal));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); $('#bellPanel').classList.add('hidden'); } });
+
+      $('#taskForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const title = $('#tTitle').value.trim();
+        if (!title) return;
+        tasks.push({ id: nextTaskId++, title, course: $('#tCourse').value, type: $('#tType').value, due: $('#tDue').value, done: false });
+        save(); renderAll(); closeModal();
+        toast('"' + title + '" ditambahkan. Pengingat aktif ⏰', 'success');
+      });
+
+      /* ---------- Notifikasi ---------- */
+      $('#bellBtn').addEventListener('click', e => { e.stopPropagation(); $('#bellPanel').classList.toggle('hidden'); });
+      document.addEventListener('click', e => { if (!e.target.closest('#bellPanel')) $('#bellPanel').classList.add('hidden'); });
+      $('#markRead').addEventListener('click', () => { $('#bellDot').classList.add('hidden'); toast('Semua pengingat ditandai dibaca.', 'info'); });
+
+      /* ---------- Form unggah berkas ---------- */
+      const fileInput = $('#fileInput'), dropZone = $('#dropZone');
+      function setSelectedFile(file) {
+        if (!file) return;
+        selectedFileName = file.name;
+        $('#dropText').textContent = '📎 ' + file.name;
+        if (!$('#fileTitle').value) $('#fileTitle').value = file.name.replace(/\.[^.]+$/, '');
+      }
+      fileInput.addEventListener('change', () => setSelectedFile(fileInput.files[0]));
+      ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('border-brand-500', 'bg-brand-50/50'); }));
+      ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('border-brand-500', 'bg-brand-50/50'); }));
+      dropZone.addEventListener('drop', e => setSelectedFile(e.dataTransfer.files[0]));
+
+      $('#shareChips').addEventListener('click', e => {
+        const c = e.target.closest('.chip'); if (!c) return;
+        const id = Number(c.dataset.id);
+        sharedWith.has(id) ? sharedWith.delete(id) : sharedWith.add(id);
+        renderPartners();
+      });
+
+      $('#fileForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const title = $('#fileTitle').value.trim();
+        if (!selectedFileName) { toast('Pilih file terlebih dahulu.', 'warn'); return; }
+        if (!title) return;
+        files.push({ id: nextFileId++, title, course: $('#fileCourse').value, name: selectedFileName, by: 'Kamu', when: 'Baru saja' });
+        const names = partners.filter(p => sharedWith.has(p.id)).map(p => p.name.split(' ')[0]);
+        toast(names.length ? 'Dibagikan ke ' + names.join(', ') + ' ✅' : 'Berkas disimpan (pribadi).', 'success');
+        $('#fileForm').reset(); selectedFileName = ''; $('#dropText').textContent = 'Klik atau seret file ke sini';
+        save(); renderAll();
+      });
+
+      $('#fileList').addEventListener('click', e => {
+        if (e.target.closest('.file-dl')) toast('Unduhan dimulai (simulasi).', 'info');
+      });
+
+      /* ---------- Teman belajar ---------- */
+      $('#partnerList').addEventListener('click', e => {
+        const btn = e.target.closest('.nudge'); if (!btn) return;
+        const p = partners.find(x => x.id === Number(btn.closest('[data-id]').dataset.id));
+        toast('Pengingat dikirim ke ' + p.name + ' 👋', 'success');
+      });
+      $('#inviteBtn').addEventListener('click', () => {
+        const link = 'https://pairup.example/invite/andi-' + Math.random().toString(36).slice(2, 7);
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).catch(() => {});
+        toast('Link undangan disalin: ' + link, 'success');
+      });
+
+      /* ---------- Init ---------- */
+      load();
+      const hour = new Date().getHours();
+      const sapa = hour < 11 ? 'Selamat pagi' : hour < 15 ? 'Selamat siang' : hour < 18 ? 'Selamat sore' : 'Selamat malam';
+      $('#greeting').textContent = sapa + ', Andi 👋';
+      renderAll();
+      showView('dashboard');
+      setTimeout(() => toast('Selamat datang di Pair Up! Ini adalah demo MVP.', 'info'), 600);
+    })();
+  </script>
+</body>
+</html>

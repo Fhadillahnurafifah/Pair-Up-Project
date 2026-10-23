@@ -1,0 +1,15 @@
+{
+  "name": "pair-up-mvp",
+  "version": "1.0.0",
+  "description": "Mockup front-end MVP Pair Up: pengingat tugas & ujian serta berkas bersama untuk mahasiswa.",
+  "private": true,
+  "scripts": {
+    "start": "serve . -l tcp://0.0.0.0:${PORT:-3000}"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}
